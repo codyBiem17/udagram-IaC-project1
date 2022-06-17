@@ -44,11 +44,29 @@ Resources:
   # instance profile contains the IAM Role name(s) that we want to associate to our auto scaling EC2 Servers
   # never give too much permissions to your EC2 instances! if they get hacked, the permissions get hacked also!
   # in this example, I create a Role called UdacityS3ReadOnlyC2 and just give it a policy of S3 Read-Only Access
-  # ProfileWithRolesForOurApp:
-  #   Type: AWS::IAM::InstanceProfile
-  #   Properties: 
-  #     Roles:
-  #       - UdacityS3ReadOnlyEC2
+  
+   UdacityS3ReadOnlyEC2:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Iam Role to allow S3 readonly access to my EC2 servers
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+  
+  ProfileWithRolesForOurApp:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Roles:
+        - !Ref UdacityS3ReadOnlyEC2
+        
   VPC: 
     Type: AWS::EC2::VPC
     Properties:
@@ -257,6 +275,7 @@ Resources:
           cd /var/www/html
           echo "it works! Udagram, Udacity" > index.html          
       ImageId: !Ref WebServerAmiID
+      IamInstanceProfile: !Ref ProfileWithRolesForOurApp
       SecurityGroups:
       - Ref: WebServerSecGroup
       InstanceType: t3.medium
